@@ -72,6 +72,7 @@ Após o treino o pipeline completo (scaler + modelo) é salvo em `models/credit_
 - scikit-learn (Logistic Regression)
 - pandas and numpy
 - joblib
+- Gemini API (camada conversacional opcional)
 - Docker
 
 ## Project Structure
@@ -81,18 +82,55 @@ project-root/
   data/
     credit_dataset.csv
   training/
+    __init__.py
+    config.py
+    data_loader.py
+    pipeline.py
+    trainer.py
     train_model.py
   api/
+    __init__.py
+    core/
+      __init__.py
+      config.py
+      model_store.py
+    routers/
+      __init__.py
+      scoring.py
+    services/
+      __init__.py
+      llm_service.py
+      scoring_service.py
+    schemas/
+      __init__.py
+      chat.py
+      scoring.py
     main.py
-    model_loader.py
-    schemas.py
   models/
     credit_model.pkl
+  .env.example
   requirements.txt
   Dockerfile
   docker-compose.yml
   README.md
 ```
+
+### Estrutura da API
+
+- `api/main.py`: cria a aplicacao FastAPI e registra os routers.
+- `api/routers/scoring.py`: endpoints `/score` e `/score/chat`.
+- `api/services/scoring_service.py`: logica de predicao e explicacao de risco.
+- `api/services/llm_service.py`: integracao com Gemini e extracao estruturada.
+- `api/schemas/*`: contratos de request/response com Pydantic.
+- `api/core/*`: configuracoes compartilhadas e carregamento do modelo em memoria.
+
+### Estrutura de treinamento
+
+- `training/train_model.py`: ponto de entrada para treino.
+- `training/trainer.py`: orquestra split, treino, avaliacao e persistencia.
+- `training/pipeline.py`: define pipeline `StandardScaler + LogisticRegression`.
+- `training/data_loader.py`: leitura/validacao do CSV.
+- `training/config.py`: caminhos e hiperparametros centralizados.
 
 ## 1. Create and activate virtual environment (`env`) on Windows
 
@@ -124,6 +162,22 @@ API will be available at:
 - `http://localhost:8000`
 - Swagger docs: `http://localhost:8000/docs`
 
+### Habilitar o endpoint conversacional com Gemini
+
+O caminho mais simples para adicionar LLM neste projeto e usar o Gemini apenas
+como camada de linguagem natural. O LLM extrai os campos do texto livre e o
+modelo de regressao logistica continua sendo o unico motor real de score.
+
+No PowerShell:
+
+```powershell
+$env:GEMINI_API_KEY="sua_chave_aqui"
+$env:GEMINI_MODEL="gemini-2.0-flash"
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Se `GEMINI_MODEL` nao for definido, a API usa `gemini-2.0-flash` por padrao.
+
 ## 4. Run with Docker
 
 ```powershell
@@ -131,6 +185,14 @@ docker compose up --build
 ```
 
 The API will be exposed at `http://localhost:8000`.
+
+Para usar Gemini com Docker, crie um arquivo `.env` na raiz do projeto com base
+em `.env.example`:
+
+```env
+GEMINI_API_KEY=sua_chave_aqui
+GEMINI_MODEL=gemini-2.0-flash
+```
 
 ## 5. Test `/score` endpoint using curl
 
@@ -147,6 +209,43 @@ Expected response format:
   "probability_default": 0.12
 }
 ```
+
+## 6. Test `/score/chat` endpoint using natural language
+
+Esse endpoint usa o Gemini para extrair os campos do texto e depois chama o
+mesmo modelo de score da API.
+
+Exemplo com PowerShell:
+
+```powershell
+$body = @{
+  message = "Tenho 35 anos, renda de 5000 por mes, 2 emprestimos e nenhum atraso."
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/score/chat" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+Resposta esperada:
+
+```json
+{
+  "extracted_data": {
+    "age": 35,
+    "income": 5000.0,
+    "number_of_loans": 2,
+    "payment_delays": 0
+  },
+  "missing_fields": [],
+  "probability_default": 0.0549,
+  "explanation": "O perfil foi convertido em dados estruturados e avaliado pelo modelo de regressao logistica."
+}
+```
+
+Se o texto estiver incompleto, a API nao inventa valores. Ela devolve os campos
+faltantes para o usuario complementar.
 
 ## Outros exemplos de payload
 
@@ -187,4 +286,4 @@ Com a API em execução (local ou Docker), acesse a documentação interativa em
 http://localhost:8000/docs
 ```
 
-É possível testar o endpoint `/score` diretamente pelo navegador, sem precisar do curl.
+E possivel testar os endpoints `/score` e `/score/chat` diretamente pelo navegador.

@@ -1,15 +1,14 @@
 from contextlib import asynccontextmanager
 
-import numpy as np
 from fastapi import FastAPI
 
-from api.model_loader import load_model
-from api.schemas import ScoreRequest, ScoreResponse
+from api.core.model_store import setup_model_store
+from api.routers.scoring import router as scoring_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.model = load_model()
+    setup_model_store(app)
     yield
 
 
@@ -20,20 +19,5 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(scoring_router)
 
-@app.post("/score", response_model=ScoreResponse)
-def score(request: ScoreRequest) -> ScoreResponse:
-    features = np.array(
-        [
-            [
-                request.age,
-                request.income,
-                request.number_of_loans,
-                request.payment_delays,
-            ]
-        ],
-        dtype=float,
-    )
-
-    probability_default = float(app.state.model.predict_proba(features)[0][1])
-    return ScoreResponse(probability_default=round(probability_default, 4))
