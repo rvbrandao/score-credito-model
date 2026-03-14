@@ -1,6 +1,6 @@
 # Credit Scoring Boilerplate (Educational)
 
-Projeto educacional de credit scoring com Machine Learning, inspirado em fluxos de pontuação de risco usados em bureaus de crédito como Serasa Experian PowerCurve.
+Projeto educacional de credit scoring com Machine Learning, inspirado em fluxos de pontuação de risco usados em bureaus de crédito.
 
 ---
 
