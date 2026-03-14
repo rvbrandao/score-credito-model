@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Credit Chat UI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <h1>Credit Scoring Chat</h1>
+        <p>Frontend de estudo para conversar com o endpoint <code>/score/chat</code>.</p>
+      </header>
+
+      <section class="chat-panel" id="chatPanel"></section>
+
+      <section class="composer">
+        <label for="apiUrl">API URL</label>
+        <input id="apiUrl" type="text" value="http://localhost:8000" />
+
+        <label for="messageInput">Mensagem</label>
+        <textarea
+          id="messageInput"
+          placeholder="Ex.: Tenho 29 anos, renda 4200, 2 emprestimos e 1 atraso."
+          rows="4"
+        ></textarea>
+
+        <div class="actions">
+          <button id="sendButton" type="button">Enviar</button>
+          <button id="resetButton" type="button" class="secondary">
+            Nova conversa
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

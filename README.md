@@ -79,6 +79,10 @@ Após o treino o pipeline completo (scaler + modelo) é salvo em `models/credit_
 
 ```text
 project-root/
+  frontend/
+    index.html
+    styles.css
+    app.js
   data/
     credit_dataset.csv
   training/
@@ -121,6 +125,7 @@ project-root/
 - `api/routers/scoring.py`: endpoints `/score` e `/score/chat`.
 - `api/services/scoring_service.py`: logica de predicao e explicacao de risco.
 - `api/services/llm_service.py`: integracao com Gemini e extracao estruturada.
+- `api/services/chat_memory_service.py`: memoria simples em processo por conversa.
 - `api/schemas/*`: contratos de request/response com Pydantic.
 - `api/core/*`: configuracoes compartilhadas e carregamento do modelo em memoria.
 
@@ -131,6 +136,12 @@ project-root/
 - `training/pipeline.py`: define pipeline `StandardScaler + LogisticRegression`.
 - `training/data_loader.py`: leitura/validacao do CSV.
 - `training/config.py`: caminhos e hiperparametros centralizados.
+
+### Estrutura do frontend
+
+- `frontend/index.html`: tela web minima de chat.
+- `frontend/styles.css`: estilos da interface.
+- `frontend/app.js`: cliente HTTP para `/score/chat` com controle de conversa.
 
 ## 1. Create and activate virtual environment (`env`) on Windows
 
@@ -215,6 +226,12 @@ Expected response format:
 Esse endpoint usa o Gemini para extrair os campos do texto e depois chama o
 mesmo modelo de score da API.
 
+Agora ele tambem suporta memoria simples de conversa em processo:
+
+- `conversation_id`: identifica a conversa.
+- `turn`: numero do turno atual.
+- Mensagens anteriores da mesma conversa sao usadas como contexto para extracao.
+
 Exemplo com PowerShell:
 
 ```powershell
@@ -232,6 +249,8 @@ Resposta esperada:
 
 ```json
 {
+  "conversation_id": "a1b2c3d4e5f6",
+  "turn": 1,
   "extracted_data": {
     "age": 35,
     "income": 5000.0,
@@ -246,6 +265,45 @@ Resposta esperada:
 
 Se o texto estiver incompleto, a API nao inventa valores. Ela devolve os campos
 faltantes para o usuario complementar.
+
+Perguntas de follow-up tambem sao suportadas. Exemplo:
+
+```text
+Usuario: Tenho 35 anos, renda de 5000 por mes, 2 emprestimos e nenhum atraso.
+Usuario: Entao posso liberar credito?
+```
+
+Nesse caso, a API reutiliza o contexto da conversa e responde com uma orientacao
+educacional baseada no ultimo score calculado, em vez de apenas repetir os
+mesmos dados extraidos.
+
+Exemplo de segunda mensagem usando a mesma conversa:
+
+```json
+{
+  "message": "Tenho 2 emprestimos ativos e 1 atraso.",
+  "conversation_id": "a1b2c3d4e5f6"
+}
+```
+
+## 7. Rodar interface web minima (frontend)
+
+Com a API rodando em `http://localhost:8000`, inicie um servidor estatico na
+pasta `frontend`:
+
+```powershell
+cd frontend
+python -m http.server 5500
+```
+
+Depois abra no navegador:
+
+```text
+http://localhost:5500
+```
+
+A interface envia mensagens para `/score/chat`, preserva o `conversation_id`
+entre envios e permite resetar para iniciar nova conversa.
 
 ## Outros exemplos de payload
 

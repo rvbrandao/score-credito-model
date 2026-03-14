@@ -7,6 +7,12 @@ class ChatScoreRequest(BaseModel):
         min_length=10,
         description="Natural language description of the customer profile",
     )
+    conversation_id: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=64,
+        description="Optional id used to keep simple in-memory chat context",
+    )
 
 
 class ExtractedCreditProfile(BaseModel):
@@ -17,7 +23,10 @@ class ExtractedCreditProfile(BaseModel):
 
 
 class ChatScoreResponse(BaseModel):
+    conversation_id: str
+    turn: int = Field(..., ge=1)
     extracted_data: ExtractedCreditProfile
     missing_fields: list[str] = Field(default_factory=list)
     probability_default: float | None = Field(default=None, ge=0.0, le=1.0)
     explanation: str
+
