@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.core.model_store import setup_model_store
 from api.routers.scoring import router as scoring_router
@@ -19,5 +20,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Open CORS for educational local frontend usage.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(scoring_router)
+
 
