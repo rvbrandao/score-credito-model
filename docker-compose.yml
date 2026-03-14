@@ -1,0 +1,7 @@
+services:
+  scoring-api:
+    build: .
+    container_name: credit-scoring-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
